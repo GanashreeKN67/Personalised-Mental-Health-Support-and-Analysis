@@ -1,0 +1,14 @@
+streamlit
+openai-whisper
+transformers
+torch
+torchaudio
+deepface
+easyocr
+pytesseract
+spacy
+pyttsx3
+python-multipart
+Pillow
+opencv-python
+sentence-transformers
