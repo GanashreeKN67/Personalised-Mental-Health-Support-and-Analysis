@@ -28,13 +28,13 @@ st.markdown('Choose your input mode:')
 col1, col2, col3 = st.columns(3)
 with col1:
     if st.button('TEXT (📝)'):
-        st.switch_page('pages/mood_selection.py')  # Navigates to Mood Selection page
+        st.switch_page('pages/Text.py')  # Navigates to Mood Selection page
 with col2:
     if st.button('AUDIO (🗣️)'):
-        st.switch_page('pages/audio_input.py')     # Replace with your audio page filename
+        st.switch_page('pages/Audio.py')     # Replace with your audio page filename
 with col3:
     if st.button('IMAGE (📷)'):
-        st.switch_page('pages/image_input.py')  
+        st.switch_page('pages/Image.py')  
 
 
 

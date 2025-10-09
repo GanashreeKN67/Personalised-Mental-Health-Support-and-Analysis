@@ -79,7 +79,7 @@ moods = {
     "😵 BIPOLAR": "Bipolar",
     "😞 DEPRESSION": "Depression",
     "😨 FEAR": "Fear",
-    "🗣️ HEARING VOICES": "Hearing Voices",
+    "🩸 SELF HARM": "Self Harm",
     "😴 INSOMIA": "Insomnia",
     "😔 LONELINESS": "Loneliness",
     "😱 PANIC ATTACK": "Panic Attack",
@@ -88,45 +88,26 @@ moods = {
     "😵‍💫 PSYCHOSIS": "Psychosis",
     "🧩 SCHIZOPHRENIA": "Schizophrenia",
     "💪 SELF CONFIDENCE": "Self Confidence",
-    "🩸 SELF HARM": "Self Harm",
+    "🗣️ HEARING VOICES": "Hearing Voices",
     "⚖️ WEIGHT LOSS": "Weight Loss",
 }
 
-custom_css = """
-<style>
-/* Mood selection buttons */
-div[data-testid="stButton"][id^="mood-btn"] > button {
-    height: 100px !important;
-    width: 150px !important;
-    font-size: 40px !important;
-}
 
-/* Guidance and Evaluate buttons */
-div[data-testid="stButton"][id^="action-btn"] > button {
-    height: 60px !important;
-    width: 220px !important;
-    font-size: 24px !important;
-}
-</style>
-"""
-
-st.markdown(custom_css, unsafe_allow_html=True)
-
-
-# Show moods in a grid (4 per row)
 cols = st.columns(4)
 selected_mood = None
 for idx, (emoji, mood_value) in enumerate(moods.items()):
     with cols[idx % 4]:
-        if st.button(emoji, key=f"mood-btn-{idx}", use_container_width=True,):
+        if st.button(emoji, use_container_width=True):
             selected_mood = mood_value
+
+
 
 # Show next step if mood selected
 if selected_mood:
 
     st.success(f"You selected mood: **{selected_mood}** ✅")
 
-    st.title("🧠 Mentify - Choose an Action")
+    st.title("🧠 EMOWELL - Choose an Action")
 
     # Create box-shaped clickable options
     col1, col2 = st.columns(2)
@@ -150,9 +131,4 @@ if selected_mood:
         else:
             st.warning("Please type something before sending.")
 
-    # action = st.radio("Choose an option:", ["Get Guidance", "Evaluate"], horizontal=True)
-
-    # # if action == "Get Guidance":
-    #     st.info("👉 GPT/LLM guidance will appear here.")
-    # elif action == "Evaluate":
-    #     st.info("👉 Questionnaire/evaluation will appear here.")
+    
