@@ -1,6 +1,6 @@
 import streamlit as st
-from model_utils import transcribe_audio, analyze_text_emotion, analyze_face_emotion, ocr_image, speak_text
-from PIL import Image
+from audio_sentiment_model import analyze_audio
+import tempfile
 
 # Page config
 st.title("Choose an Audio Source:") 
@@ -16,14 +16,22 @@ elif mic_audio is not None:
     audio_source = mic_audio
 
 if audio_source is not None:
-    with st.spinner('Transcribing...'):
-        transcript = transcribe_audio(audio_source)
-    st.write('Transcript:')
-    st.write(transcript)
-    emo = analyze_text_emotion(transcript)
-    st.write('Emotion (from text):', emo)
-    reply = f"Transcript emotion: {emo.get('label')} ({emo.get('score'):.2f}). Suggested coping: grounding exercise, short walk, hydrate, or contact help if overwhelmed."
-    st.info(reply)
-    if st.button('Speak reply (audio)'):
-        speak_text(reply)
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        tmp_file.write(audio_source.read())
+        file_path = tmp_file.name
+
+    st.audio(file_path)
+
+    if st.button("🧠 Analyze Audio"):
+        with st.spinner("Processing audio..."):
+            result = analyze_audio(file_path)
+
+        st.subheader("🗣️ Transcription")
+        st.write(result["transcription"])
+
+        st.subheader("💬 Sentiment")
+        st.write(f"**{result['sentiment']}** ({result['score']*100:.1f}%)")
+
+        st.subheader("🤖 Response")
+        st.success(result["response"])
 
