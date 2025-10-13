@@ -1,6 +1,6 @@
 # app.py
 import streamlit as st
-
+from audio_sentiment_model import analyze_audio
 from model_utils import transcribe_audio, analyze_text_emotion, analyze_face_emotion, ocr_image, speak_text
 from PIL import Image
 

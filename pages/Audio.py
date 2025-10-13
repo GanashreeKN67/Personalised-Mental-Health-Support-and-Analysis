@@ -20,7 +20,7 @@ if audio_source is not None:
         tmp_file.write(audio_source.read())
         file_path = tmp_file.name
 
-    st.audio(file_path)
+    #st.audio(file_path)
 
     if st.button("🧠 Analyze Audio"):
         with st.spinner("Processing audio..."):
