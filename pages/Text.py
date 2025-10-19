@@ -1,4 +1,5 @@
 import streamlit as st
+from text_model import generate_guidance, get_questions, evaluate_responses
 
 # Page config
 st.set_page_config(page_title="Mood Selection", layout="centered")
@@ -92,13 +93,19 @@ moods = {
     "⚖️ WEIGHT LOSS": "Weight Loss",
 }
 
+if "selected_mood" not in st.session_state:
+    st.session_state.selected_mood = None
+
+def set_mood(mood):
+    st.session_state.selected_mood = mood
 
 cols = st.columns(4)
-selected_mood = None
 for idx, (emoji, mood_value) in enumerate(moods.items()):
     with cols[idx % 4]:
-        if st.button(emoji, use_container_width=True):
-            selected_mood = mood_value
+        # use on_click to set session state so selection persists
+        st.button(emoji, key=f"mood-{idx}", on_click=set_mood, args=(mood_value,), use_container_width=True)
+
+selected_mood = st.session_state.selected_mood
 
 
 
@@ -106,7 +113,6 @@ for idx, (emoji, mood_value) in enumerate(moods.items()):
 if selected_mood:
 
     st.success(f"You selected mood: **{selected_mood}** ✅")
-
     st.title("🧠 EMOWELL - Choose an Action")
 
     # Create box-shaped clickable options
@@ -115,10 +121,30 @@ if selected_mood:
     with col1:
         if st.button("🧘 Get Guidance", key="action-btn-guidance", use_container_width=True):
             st.success("You selected: Get Guidance")
+            response = generate_guidance(user_mood=selected_mood, user_note="")
+            st.write(response)
 
     with col2:
         if st.button("📊 Evaluate", key="action-btn-evaluate", use_container_width=True):
             st.success("You selected: Evaluate")
+            questions = get_questions()
+            # use a form so radios and submission are handled atomically
+            with st.form("evaluation_form"):
+                for i, q in enumerate(questions):
+                    # unique key per question
+                    st.radio(q["question"], list(q["options"].keys()), key=f"q_{i}")
+                submitted = st.form_submit_button("Evaluate")
+
+            if submitted:
+                # gather answers from session_state keys produced by the form
+                user_answers = {}
+                for i, q in enumerate(questions):
+                    selected_label = st.session_state.get(f"q_{i}")
+                    user_answers[q["question"]] = q["options"][selected_label]
+                result = evaluate_responses(user_answers)
+                st.write(f"Score: {result['score']}%")
+                st.success(f"{result['status']}")
+                st.info(result["tip"])
 
     # --- Prompt Box Section ---
     st.markdown("<br><hr>", unsafe_allow_html=True)
@@ -127,7 +153,7 @@ if selected_mood:
 
     if st.button("Send"):
         if prompt.strip():
-            st.info(f"🤖 Mentify's Response: Analyzing your message — '{prompt}'")
+            st.info(f"🤖 EMOWELL Response: Analyzing your message — '{prompt}'")
         else:
             st.warning("Please type something before sending.")
 
