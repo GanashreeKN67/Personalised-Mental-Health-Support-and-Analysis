@@ -21,24 +21,30 @@ QUESTION_BANK = [
 ]
 
 # ========== Load your LLM for guidance (Llama 2 / local / Hugging Face) ==========
-try:
-    guidance_model = pipeline(
-        "text-generation",
-        model="meta-llama/Llama-2-7b-chat-hf",  # or any LLM you have
-        max_length=200,
-        temperature=0.8,
-        pad_token_id=0
-    )
-except Exception:
-    # fallback small model for offline use
-    guidance_model = pipeline(
-        "text-generation",
-        model="gpt2",
-        max_length=200,
-        temperature=0.8,
-        pad_token_id=50256
-    )
+_guidance_model = None
 
+def _get_guidance_model():
+    global _guidance_model
+    if _guidance_model is None:
+        try:
+            # Prefer a lightweight generator to avoid long/hanging loads during import
+            _guidance_model = pipeline(
+                "text-generation",
+                model="distilgpt2",
+                max_length=200,
+                temperature=0.8,
+                pad_token_id=50256
+            )
+        except Exception:
+            # final fallback to gpt2
+            _guidance_model = pipeline(
+                "text-generation",
+                model="gpt2",
+                max_length=200,
+                temperature=0.8,
+                pad_token_id=50256
+            )
+    return _guidance_model
 # ============================================================
 # 1️⃣ GUIDANCE MODE
 # ============================================================
@@ -51,9 +57,14 @@ def generate_guidance(user_mood: str, user_note: str = ""):
         f"As a compassionate mental-health assistant, give supportive advice and coping tips."
     )
 
-    response = guidance_model(prompt)[0]["generated_text"]
-    return response.strip()
-
+    model = _get_guidance_model()
+    # call with a spinner in the UI (handled in Text.py) — keep generation params here minimal
+    out = model(prompt, max_length=200)
+    response = out[0].get("generated_text", "").strip()
+    # remove the prompt echo if the model repeats it (simple heuristic)
+    if response.startswith(prompt):
+        response = response[len(prompt):].strip()
+    return response
 # ============================================================
 # 2️⃣ EVALUATION MODE
 # ============================================================

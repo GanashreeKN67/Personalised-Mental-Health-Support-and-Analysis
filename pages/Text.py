@@ -153,7 +153,13 @@ if selected_mood:
 
     if st.button("Send"):
         if prompt.strip():
-            st.info(f"🤖 EMOWELL Response: Analyzing your message — '{prompt}'")
+            with st.spinner("Generating response..."):
+                try:
+                    response = generate_guidance(user_mood=selected_mood or "Neutral", user_note=prompt)
+                    st.markdown("**🤖 EMOWELL Response:**")
+                    st.write(response)
+                except Exception as e:
+                    st.error(f"Failed to generate response: {e}")
         else:
             st.warning("Please type something before sending.")
 
