@@ -1,5 +1,12 @@
 import streamlit as st
 from text_model import generate_guidance, get_questions, evaluate_responses
+from auth import save_user_data, load_user_data
+
+#Login check
+if "user" not in st.session_state or st.session_state["user"] is None:
+    st.query_params["page"] = "Login"
+    st.rerun()
+
 
 # Page config
 st.set_page_config(page_title="Mood Selection", layout="centered")
@@ -7,6 +14,14 @@ st.set_page_config(page_title="Mood Selection", layout="centered")
 st.title("😃 EMOWELL - Select Your Mood")
 
 st.write("### Please select your mood for today:")
+
+
+if "selected_mood" not in st.session_state:
+    st.session_state.selected_mood = None
+
+def set_mood(mood):
+    st.session_state.selected_mood = mood
+
 st.markdown("""
     <style>
     .option-container {
@@ -93,11 +108,6 @@ moods = {
     "⚖️ WEIGHT LOSS": "Weight Loss",
 }
 
-if "selected_mood" not in st.session_state:
-    st.session_state.selected_mood = None
-
-def set_mood(mood):
-    st.session_state.selected_mood = mood
 
 cols = st.columns(4)
 for idx, (emoji, mood_value) in enumerate(moods.items()):
@@ -120,31 +130,59 @@ if selected_mood:
 
     with col1:
         if st.button("🧘 Get Guidance", key="action-btn-guidance", use_container_width=True):
-            st.success("You selected: Get Guidance")
-            response = generate_guidance(user_mood=selected_mood, user_note="")
-            st.write(response)
+            st.session_state.last_action = "guidance"
+            st.rerun()
 
     with col2:
         if st.button("📊 Evaluate", key="action-btn-evaluate", use_container_width=True):
-            st.success("You selected: Evaluate")
-            questions = get_questions()
-            # use a form so radios and submission are handled atomically
-            with st.form("evaluation_form"):
-                for i, q in enumerate(questions):
-                    # unique key per question
-                    st.radio(q["question"], list(q["options"].keys()), key=f"q_{i}")
-                submitted = st.form_submit_button("Evaluate")
+            st.session_state.last_action = "evaluate"
+            st.rerun()
 
-            if submitted:
-                # gather answers from session_state keys produced by the form
-                user_answers = {}
-                for i, q in enumerate(questions):
-                    selected_label = st.session_state.get(f"q_{i}")
-                    user_answers[q["question"]] = q["options"][selected_label]
+    #Handle action selection
+    action = st.session_state.get("last_action")
+
+    if action == "guidance":
+        st.subheader("Guidance")
+        note = st.text_area("Optional note (more context helps):", key="guidance_note")
+        if st.button("Send", key="send_guidance"):
+            if note.strip() or selected_mood:
+                with st.spinner("Generating guidance..."):
+                    try:
+                        response = generate_guidance(user_mood=selected_mood, user_note=note)
+                        st.markdown("**🤖 EMOWELL Response:**")
+                        st.write(response)
+                        # Optionally save per-user
+                        try:
+                            if "user" in st.session_state and st.session_state["user"]:
+                                save_user_data(st.session_state["user"], "last_response", response)
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        st.error(f"Guidance generation failed: {e}")
+            else:
+                st.warning("Please add a note or ensure a mood is selected.")
+
+    elif action == "evaluate":
+        st.subheader("Self-evaluation")
+        questions = get_questions()
+        with st.form("evaluation_form"):
+            for i, q in enumerate(questions):
+                st.radio(q["question"], list(q["options"].keys()), key=f"q_{i}")
+            submitted = st.form_submit_button("Evaluate")
+        if submitted:
+            # collect answers
+            user_answers = {}
+            for i, q in enumerate(questions):
+                sel = st.session_state.get(f"q_{i}")
+                user_answers[q["question"]] = q["options"].get(sel, 0)
+            try:
                 result = evaluate_responses(user_answers)
-                st.write(f"Score: {result['score']}%")
-                st.success(f"{result['status']}")
-                st.info(result["tip"])
+                st.write(f"Score: {result.get('score', 'N/A')}")
+                st.success(result.get("status", ""))
+                st.info(result.get("tip", ""))
+            except Exception as e:
+                st.error(f"Evaluation failed: {e}")
+
 
     # --- Prompt Box Section ---
     st.markdown("<br><hr>", unsafe_allow_html=True)

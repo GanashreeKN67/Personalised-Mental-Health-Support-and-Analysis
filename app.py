@@ -2,8 +2,13 @@
 import streamlit as st
 from audio_sentiment_model import analyze_audio
 
+
 from model_utils import transcribe_audio, analyze_text_emotion, analyze_face_emotion, ocr_image, speak_text
 from PIL import Image
+
+if "user" not in st.session_state or st.session_state["user"] is None:
+    st.query_params["page"] = "Login"
+    st.rerun()
 
 
 st.set_page_config(page_title='MH Assistant Prototype', layout='centered')
@@ -37,6 +42,24 @@ with col3:
     if st.button('IMAGE (📷)'):
         st.switch_page('pages/Image.py')  
 
+#Logout button
+# Add this before your button (once per page)
+st.markdown("""
+    <style>
+    .logout-btn button {
+        width: 20px !important;
+        height: 60px !important;
+        font-size: 22px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-
+# Wrap your button in a container with the custom class
+with st.container():
+    st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
+    if st.button("Logout"):
+        st.session_state["user"] = None
+        st.query_params["page"] = "Login"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
