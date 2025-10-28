@@ -69,9 +69,35 @@ def generate_guidance(user_mood: str, user_note: str = ""):
 # 2️⃣ EVALUATION MODE
 # ============================================================
 
-def get_questions(n=3):
-    """Return a random subset of questions."""
-    return random.sample(QUESTION_BANK, min(n, len(QUESTION_BANK)))
+import json
+import os
+
+def load_mood_questions(mood: str):
+    """Load the question set for the selected mood."""
+    file_path = os.path.join("data", f"{mood.lower()}.json")
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"No question file found for mood: {mood}")
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    questions = []
+    for q in data["questions"]:
+        opts = q["options"]
+
+        # ✅ If options are list like "Rarely+0", convert to dict {"Rarely":0}
+        if isinstance(opts, list):
+            option_dict = {}
+            for o in opts:
+                if "+" in o:
+                    text, score = o.split("+")
+                    option_dict[text.strip()] = int(score)
+                else:
+                    option_dict[o.strip()] = 0
+            q["options"] = option_dict
+
+        questions.append(q)
+
+    return questions
+
 
 def evaluate_responses(responses: dict):
     """

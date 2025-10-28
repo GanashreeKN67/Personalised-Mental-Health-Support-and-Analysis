@@ -1,5 +1,5 @@
 import streamlit as st
-from text_model import generate_guidance, get_questions, evaluate_responses
+from text_model import generate_guidance, load_mood_questions, evaluate_responses
 from auth import save_user_data, load_user_data
 
 #Login check
@@ -164,22 +164,37 @@ if selected_mood:
 
     elif action == "evaluate":
         st.subheader("Self-evaluation")
-        questions = get_questions()
+        try:
+            questions = load_mood_questions(selected_mood)
+            st.info(f"Answer the following questions related to **{selected_mood}** mood:")
+        except FileNotFoundError:
+            st.error(f"No question file found for mood '{selected_mood}'. Please add {selected_mood.lower()}.json in data/")
+            st.stop()
+
+        # Display questions inside a form
         with st.form("evaluation_form"):
-            for i, q in enumerate(questions):
-                st.radio(q["question"], list(q["options"].keys()), key=f"q_{i}")
-            submitted = st.form_submit_button("Evaluate")
-        if submitted:
-            # collect answers
             user_answers = {}
             for i, q in enumerate(questions):
-                sel = st.session_state.get(f"q_{i}")
-                user_answers[q["question"]] = q["options"].get(sel, 0)
+                # Show question and options
+                choice = st.radio(
+                    label=q["question"],
+                    options=list(q["options"].keys()),
+                    key=f"{selected_mood}_{i}",
+                    horizontal=True
+                )
+                # Save user choice -> score
+                user_answers[q["question"]] = q["options"][choice]
+
+            submitted = st.form_submit_button("🧩 Evaluate")
+
+        # Handle evaluation
+        if submitted:
             try:
                 result = evaluate_responses(user_answers)
-                st.write(f"Score: {result.get('score', 'N/A')}")
-                st.success(result.get("status", ""))
-                st.info(result.get("tip", ""))
+                st.markdown(f"### 🧾 Your Evaluation Result")
+                st.write(f"**Score:** {result['score']}%")
+                st.success(result['status'])
+                st.info(result['tip'])
             except Exception as e:
                 st.error(f"Evaluation failed: {e}")
 
