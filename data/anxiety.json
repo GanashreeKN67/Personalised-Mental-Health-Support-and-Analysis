@@ -1,7 +1,7 @@
 {
   "questions": [
     {
-      "question": "How often do you find yourself experiencing anxiety in daily situations?",
+      "question": "1. How often do you find yourself experiencing anxiety in daily situations?",
       "options": {
         "Rarely":0,
         "Occasionally":1,
@@ -10,7 +10,7 @@
       }
     },
     {
-      "question": "Do you tend to express your anxiety outwardly or keep it to yourself?",
+      "question": "2. Do you tend to express your anxiety outwardly or keep it to yourself?",
       "options": {
         "Express outwardly":3,
         "Keep to myself":1,
@@ -19,7 +19,7 @@
         }
     },
     {
-      "question": "What triggers your anxiety the most?",
+      "question": "3. What triggers your anxiety the most?",
       "options": {
         "Uncertainty":1,
         "Social situations":3,
@@ -28,7 +28,7 @@
       }
     },
     {
-      "question": "How would you describe the intensity of your anxiety when it occurs?",
+      "question": "4. How would you describe the intensity of your anxiety when it occurs?",
       "options": {
         "Mild":0,
         "Moderate":1,
@@ -37,7 +37,7 @@
       }
     },
     {
-      "question": "Do you actively seek methods to manage and control your anxiety?",
+      "question": "5. Do you actively seek methods to manage and control your anxiety?",
       "options": {
         "Yes, regularly":3,
         "Sometimes":2,
@@ -46,7 +46,7 @@
       }
     },
     {
-      "question": "Have others expressed concern about your anxiety behavior?",
+      "question": "6. Have others expressed concern about your anxiety behavior?",
       "options": {
         "Yes, frequently":3,
         "Occasionally":2,
@@ -55,7 +55,7 @@
       }
     },
     {
-      "question": "Do you feel regret or guilt after experiencing anxiety?",
+      "question": "7. Do you feel regret or guilt after experiencing anxiety?",
       "options": {
         "Always":0,
         "Sometimes":1,
@@ -64,7 +64,7 @@
       }
     },
     {
-      "question": "Have you sought professional help or counseling for anxiety-related issues?",
+      "question": "8. Have you sought professional help or counseling for anxiety-related issues?",
       "options": {
         "Yes":0,
         "Considering it":1,
@@ -73,7 +73,7 @@
         }
     },
     {
-      "question": "How would you rate the impact of anxiety on your relationships and daily life?",
+      "question": "9. How would you rate the impact of anxiety on your relationships and daily life?",
       "options": {
         "Low impact":0,
         "Moderate impact":1,
@@ -82,7 +82,7 @@
         }   
     },
     {
-      "question": "Do you believe that addressing and managing anxiety is important for overall well-being?",
+      "question": "10. Do you believe that addressing and managing anxiety is important for overall well-being?",
       "options": {
         "Strongly agree":0,
         "Agree":1,

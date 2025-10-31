@@ -1,7 +1,7 @@
 {
   "questions": [
     {
-      "question": "How often do you find yourself getting angry in daily situations?",
+      "question": "1. How often do you find yourself getting angry in daily situations?",
       "options": {
         "Rarely": 0,
         "Occasionally": 1,
@@ -10,7 +10,7 @@
       }
     },
     {
-      "question": "Do you tend to express your anger outwardly or keep it to yourself?",
+      "question": "2. Do you tend to express your anger outwardly or keep it to yourself?",
       "options": {
         "Express outwardly": 3,
         "Keep to myself": 1,
@@ -19,7 +19,7 @@
       }  
     },
     {
-      "question": "What triggers your anger the most?",
+      "question": "3. What triggers your anger the most?",
       "options": {
         "Frustration":1,
         "Disappointment":2,
@@ -28,7 +28,7 @@
       }
     },
     {
-      "question": "How would you describe the intensity of your anger when it occurs?",
+      "question": "4. How would you describe the intensity of your anger when it occurs?",
       "options": {
         "Mild":0,
         "Moderate":1,
@@ -37,7 +37,7 @@
       }
     },
     {
-      "question": "Do you actively seek methods to manage and control your anger?",
+      "question": "5. Do you actively seek methods to manage and control your anger?",
       "options": {
         "Yes, regularly":0,
         "Sometimes":1,
@@ -46,7 +46,7 @@
       }
     },
     {
-      "question": "Have others expressed concern about your anger behavior?",
+      "question": "6. Have others expressed concern about your anger behavior?",
       "options": {
         "Yes, frequently":3,
         "Occasionally":2,
@@ -55,7 +55,7 @@
       }
     },
     {
-      "question": "Do you feel regret or guilt after expressing anger?",
+      "question": "7. Do you feel regret or guilt after expressing anger?",
       "options": {
         "Always":0,
         "Sometimes":1,
@@ -64,7 +64,7 @@
       }
     },
     {
-      "question": "Have you sought professional help or counseling for anger-related issues?",
+      "question": "8. Have you sought professional help or counseling for anger-related issues?",
       "options": {
         "Yes":0,
         "Considering it":1,
@@ -73,7 +73,7 @@
       }
     },
     {
-      "question": "How would you rate the impact of anger on your relationships and daily life?",
+      "question": "9. How would you rate the impact of anger on your relationships and daily life?",
       "options": {
         "Low impact":0,
         "Moderate impact":1,
@@ -82,7 +82,7 @@
       }
     },
     {
-      "question": "Do you believe that addressing and managing anger is important for overall well-being?",
+      "question": "10. Do you believe that addressing and managing anger is important for overall well-being?",
       "options": {
         "Strongly agree":0,
         "Agree":1,
