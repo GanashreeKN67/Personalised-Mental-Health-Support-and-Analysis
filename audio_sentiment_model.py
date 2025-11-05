@@ -1,121 +1,131 @@
-
-# AUDIO TRANSCRIBE AND SENTIMENT ANALYSIS
-
-import torchaudio
-from transformers import pipeline
-from transformers import pipeline as hf_pipeline
-import torch
-import streamlit as st
-
-asr_model = pipeline(
-    "automatic-speech-recognition",
-    model="facebook/wav2vec2-base-960h"
-)
-
-
-def analyze_audio(file_path):
-    
-    waveform, sample_rate = torchaudio.load(file_path)
-
-    language_code = st.selectbox("Choose language:", ["en", "hi", "ta", "te", "kn"])
-    result = asr_model(
-        {"array": waveform.squeeze().numpy(), "sampling_rate": sample_rate},
-        generate_kwargs={"language": language_code}
-    )
-
-    # Hugging Face pipeline expects raw waveform + sampling rate
-    result = asr_model({"array": waveform.squeeze().numpy(), "sampling_rate": sample_rate },generate_kwargs={"language": "en"})
-    text = result["text"].strip()
-
-    # The rest of your sentiment + response pipeline remains same
-    
-    sentiment_model = hf_pipeline(
-        "sentiment-analysis",
-        model="cardiffnlp/twitter-roberta-base-sentiment",
-        return_all_scores=True
-    )
-    response_gen = hf_pipeline("text-generation", model="gpt2", max_length=80, pad_token_id=50256)
-
-    sentiment_scores = sentiment_model(text)[0]
-    sentiment_scores.sort(key=lambda x: x['score'], reverse=True)
-    top = sentiment_scores[0]
-    label, score = top["label"], top["score"]
-
-    prompt = f"User said: '{text}'. The sentiment is {label}. Reply empathetically."
-    response = response_gen(prompt)[0]["generated_text"]
-
-    return {
-        "transcription": text,
-        "sentiment": label,
-        "score": round(float(score), 3),
-        "response": response
-    }
- 
-''' # AUDIO TRANSCRIBE AND SENTIMENT ANALYSIS
-# ---------------------------------------
-# This version uses Hugging Face's Speech-to-Text model for transcription
-# No FFmpeg or Whisper needed!
-
+# ===== audio_sentiment_model.py =====
+import numpy as np
+import librosa
+import tensorflow as tf
+import joblib
+import google.generativeai as genai
 import os
-import torch
-from transformers import pipeline
+from dotenv import load_dotenv
 
-# ====== LOAD MODELS ======
+load_dotenv() 
+# --- Configure Gemini ---
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("❌ Gemini API key not found. Add it to your .env file as GEMINI_API_KEY=<your_key>")
 
-# 🎤 1. Speech-to-Text (Hugging Face ASR)
-asr_model = pipeline(
-    "automatic-speech-recognition",
-    model="openai/whisper-tiny",   # or "facebook/wav2vec2-base-960h"
-)
+genai.configure(api_key=GEMINI_API_KEY)
+gemini_model = genai.GenerativeModel("gemini-2.5-flash")  # or "gemini-1.5-flash" for faster output
 
-# 💬 2. Sentiment Analysis
-sentiment_model = pipeline(
-    "sentiment-analysis",
-    model="cardiffnlp/twitter-roberta-base-sentiment",
-    return_all_scores=True
-)
+# ============================================================
+# 🧩 CBT PROMPTS FOR THERAPEUTIC RESPONSES
+# ============================================================
 
-# 🤖 3. Response Generation
-response_generator = pipeline(
-    "text-generation",
-    model="gpt2",
-    max_length=80,
-    pad_token_id=50256
-)
+CBT_PROMPTS = {
+    "anger": (
+        "The user looks angry. As a CBT therapist, help them explore what triggered this anger, "
+        "recognize physical signs of tension, and find ways to calm down safely. "
+        "Offer strategies to express emotions constructively."
+    ),
+    "sad": (
+        "The user appears sad. Offer CBT-based empathy, validate their feelings, and suggest small actions "
+        "that promote hope — like journaling, reaching out to loved ones, or self-compassion."
+    ),
+    "happy": (
+        "The user looks happy. Reinforce positive behavior and emotional awareness. "
+        "Encourage gratitude and reflection on what contributes to their well-being."
+    ),
+    "surprise": (
+        "The user seems surprised. Provide a CBT-style reflection: explore what caused this surprise and "
+        "whether it is positive or stressful. Help them process it calmly."
+    ),
+    "fear": (
+        "The user looks fearful. Offer CBT grounding guidance: recognize what feels threatening, "
+        "challenge catastrophic thoughts, and focus on safety and breathing."
+    ),
+    "neutral": (
+        "The user appears neutral or calm. Encourage mindfulness and reflection. "
+        "Ask how they’re feeling inside — not just what’s visible."
+    ),
+    "disgust": (
+        "The user shows disgust. As a CBT therapist, explore what caused this reaction, "
+        "help them identify triggering thoughts, and guide toward balanced evaluation."
+    ),
+    "contempt": (
+        "The user shows contempt. Offer CBT support by reflecting on interpersonal thoughts, "
+        "empathy exercises, and emotional regulation strategies."
+    )
+}
 
 
-# ====== MAIN FUNCTION ======
 
+
+# Load your trained model (adjust path as needed)
+MODEL_PATH = "models/speech_emotion_model.h5"
+model = tf.keras.models.load_model(MODEL_PATH)
+
+# Optionally load label encoder if you saved one
+LABEL_ENCODER_PATH = "models/label_encoder.pkl"
+try:
+    label_encoder = joblib.load(LABEL_ENCODER_PATH)
+except Exception:
+    label_encoder = None
+
+# --- FEATURE EXTRACTION ---
+def extract_features(file_path, mfcc=True, chroma=True, mel=True):
+    """Extract MFCC, Chroma, and Mel features from audio file."""
+    X, sample_rate = librosa.load(file_path, res_type="kaiser_fast", duration=3, offset=0.5)
+    result = np.array([])
+    if mfcc:
+        mfccs = np.mean(librosa.feature.mfcc(y=X, sr=sample_rate, n_mfcc=40).T, axis=0)
+        result = np.hstack((result, mfccs))
+    if chroma:
+        stft = np.abs(librosa.stft(X))
+        chroma_features = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T, axis=0)
+        result = np.hstack((result, chroma_features))
+    if mel:
+        mel_features = np.mean(librosa.feature.melspectrogram(y=X, sr=sample_rate).T, axis=0)
+        result = np.hstack((result, mel_features))
+    return result
+
+
+
+# --- PREDICTION FUNCTION ---
 def analyze_audio(file_path):
-    """Transcribe, analyze sentiment, and generate empathetic response."""
+    """Use the trained model to predict emotion and CBT guidance."""
+    try:
+        features = extract_features(file_path)
+        features = np.expand_dims(features, axis=0)
+        prediction = model.predict(features)
+        predicted_index = np.argmax(prediction)
+        
+        if label_encoder:
+            emotion = label_encoder.inverse_transform([predicted_index])[0]
+        else:
+            # fallback emotion list (modify to match your dataset)
+            emotion_classes = ["angry", "calm", "fearful", "happy", "sad", "surprised", "neutral"]
+            emotion = emotion_classes[predicted_index]
 
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Audio file not found: {file_path}")
+        confidence = round(float(np.max(prediction)) * 100, 2)
+        top_emotion = emotion[0]['label'].lower()
 
-    print(f"\n🔍 Analyzing audio: {file_path}")
+        # Step 2: Build CBT-based therapeutic prompt
+        base_prompt = CBT_PROMPTS.get(
+            top_emotion,
+            f"The user’s detected emotion is {top_emotion}. Provide CBT-based empathetic guidance."
+        )
+        prompt = f"Detected emotion: {top_emotion}. {base_prompt} Use practical CBT steps and empathetic language."
 
-    # 1️⃣ Transcribe using Hugging Face model
-    print("🎧 Transcribing with Hugging Face ASR model...")
-    result = asr_model(file_path)
-    text = result["text"].strip()
+        # Step 3: Generate response from Gemini
+        response = gemini_model.generate_content(prompt)
 
-    # 2️⃣ Sentiment analysis
-    print("💬 Analyzing sentiment...")
-    sentiment_scores = sentiment_model(text)[0]
-    sentiment_scores.sort(key=lambda x: x["score"], reverse=True)
-    top_sentiment = sentiment_scores[0]
-    sentiment_label = top_sentiment["label"]
-    sentiment_score = top_sentiment["score"]
 
-    # 3️⃣ Generate empathetic response
-    print("🤖 Generating response...")
-    prompt = f"User said: '{text}'. The sentiment is {sentiment_label}. Reply empathetically."
-    response = response_generator(prompt)[0]["generated_text"]
+        return {
+            "transcription": "N/A",
+            "sentiment": emotion,
+            "score": confidence / 100,
+            "response": response.text.strip() if response and response.text else "No response generated."
+        }
 
-    return {
-        "transcription": text,
-        "sentiment": sentiment_label,
-        "score": round(float(sentiment_score), 3),
-        "response": response
-    }
-'''
+    except Exception as e:
+        return {"error": str(e)}
+

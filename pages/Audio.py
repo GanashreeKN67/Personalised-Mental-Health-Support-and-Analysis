@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import shutil 
 from audio_sentiment_model import analyze_audio
 import tempfile
 from auth import save_user_data, load_user_data
@@ -37,22 +38,26 @@ if audio_source is not None:
             local_path = tmp_file.name
 
         dest = os.path.join(user_dir, os.path.basename(local_path))
-        os.replace(local_path, dest)
+        shutil.copyfile(local_path, dest)  # <-- copy instead of move
+        os.remove(local_path)              # <-- delete temp file
         st.success(f"Saved audio to {dest}")
 
         if st.button("🧠 Analyze Audio"):
             with st.spinner("Processing audio..."):
                 result = analyze_audio(dest)
 
-            st.subheader("🗣️ Transcription")
-            st.write(result["transcription"])
-            save_user_data(user, "last_audio_transcription", result["transcription"])
+            if "transcription" in result:
+                st.subheader("🗣️ Transcription")
+                st.write(result["transcription"])
+                save_user_data(user, "last_audio_transcription", result["transcription"])
 
-            st.subheader("💬 Sentiment")
-            st.write(f"**{result['sentiment']}** ({result['score']*100:.1f}%)")
+                st.subheader("💬 Sentiment")
+                st.write(f"**{result['sentiment']}** ({result['score']*100:.1f}%)")
 
-            st.subheader("🤖 Response")
-            st.success(result["response"])
-            save_user_data(user, "last_audio_response", result["response"])
+                st.subheader("🤖 Response")
+                st.success(result["response"])
+                save_user_data(user, "last_audio_response", result["response"])
+            else:
+                st.error(result.get("error", "Audio analysis failed."))
 
 

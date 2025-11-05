@@ -18,6 +18,7 @@ _tts_engine = None
 
 
 
+
 def get_whisper():
     global _whisper_model
     if _whisper_model is None:
@@ -41,59 +42,31 @@ def transcribe_audio(file_obj):
 
 
 
-def get_text_pipe():
-    global _text_pipe
-    if _text_pipe is None:
-        _text_pipe = pipeline('sentiment-analysis')
-    return _text_pipe
 
-
-
-
-def analyze_text_emotion(text):
-    pipe = get_text_pipe()
-    res = pipe(text[:512])[0]
-    return {'label': res['label'], 'score': float(res['score'])}
-
-
-def get_ocr():
-    global _ocr_reader
+def load_image_models():
+    global _face_emotion_model, _ocr_reader
+    if _face_emotion_model is None:
+        _face_emotion_model = pipeline("image-classification", model="dima806/facial_emotions_image_detection")
     if _ocr_reader is None:
-        _ocr_reader = easyocr.Reader(['en'])
-    return _ocr_reader
+        _ocr_reader = easyocr.Reader(["en"], gpu=False)
+    return _face_emotion_model, _ocr_reader
 
 
 
 
-def ocr_image(file_obj):
-    reader = get_ocr()
-    # if streamlit file, convert to bytes
-    if hasattr(file_obj, 'read'):
-        data = file_obj.read()
-        img = Image.open(io.BytesIO(data)).convert('RGB')
-        tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+def ocr_image(image):
+    """Extract visible text from image using EasyOCR."""
+    _, reader = load_image_models()
+    if hasattr(image, "read"):  # Streamlit UploadedFile
+        data = image.read()
+        img = Image.open(io.BytesIO(data)).convert("RGB")
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
         img.save(tmp.name)
         result = reader.readtext(tmp.name, detail=0)
     else:
-        result = reader.readtext(file_obj, detail=0)
-    return '\n'.join(result)
+        result = reader.readtext(image, detail=0)
+    return "\n".join(result) if result else "No visible text detected."
 
-
-
-
-def analyze_face_emotion(file_obj):
-    # DeepFace expects a filepath or ndarray. We'll write to temp if needed.
-    if hasattr(file_obj, 'read'):
-        data = file_obj.read()
-        img = Image.open(io.BytesIO(data)).convert('RGB')
-        tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-        img.save(tmp.name)
-        analysis = DeepFace.analyze(tmp.name, actions=['emotion'], enforce_detection=False)
-    else:
-        analysis = DeepFace.analyze(file_obj, actions=['emotion'], enforce_detection=False)
-        # normalize output
-        dominant = analysis.get('dominant_emotion') if isinstance(analysis, dict) else analysis[0].get('dominant_emotion')
-    return {'dominant_emotion': dominant, 'raw': analysis}
 
 
 
